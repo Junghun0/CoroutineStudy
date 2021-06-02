@@ -88,3 +88,42 @@ fun main(args: Array<String>) {
 코드를 더 빠른 CPU에서 실행하면 코드의 변경 없이도 성능이 향상된다.
 
 
+### 원자성 위반
+
+원자성 작업 이란 `작업이 사용하는 데이터를 간섭 없이 접근할 수 있음` 을 말한다. 
+단일 스레드 Application 에서는 모든 코드가 순차적으로 실행되기 때문에 모든 작업이 모두 원자일 것이다. 즉, 스레드가 하나만 실행되므로 간성ㅂ이 있을 수 없다.
+
+원자성은 객체의 상태가 동시에 수정될 수 있을 때 필요하며 그 상태의 수정이 겹치지 않도록 보장해야한다.
+코루틴을 사용할 때 이부분을 유의하자! 코루틴이 다른 코루틴이 숮어하고 있는 데이터를 바꿀 수 있다는 것이다.
+예제를 통해 살펴보자
+~~~kotlin
+var count = 0
+fun main(args: Array<String>) = runBlocking {
+    val workerA = asyncIncrement(2000)
+    val workerB = asyncIncrement(100)
+    workerA.await()
+    workerB.await()
+    print("counter [$counter]")
+}
+
+fun asyncIncrement(by: Int) = GlobalScope.async {
+    for (i in 0 until by) {
+        counter++
+    }
+}
+~~~
+
+위 코드에서 asyncIncrement() 코루틴을 두 번 동시에 실행한다.
+한 호출에서는 counter 를 2000 번 증가시키고 다른 호출에서는 100 번 증가시킬 것이다.
+문제는 asyncIncrement()의 두 실행이 서로간섭 할 수 있으며, 서로 다른 코루틴 인스턴스가 값을 재정의할 수 있다는 것이다.
+main()을 실행하면 대부분 counter [2100] 을 출력하지만, 꽤 많은 실행에서 2100 보다 적은 값을 인쇄한다는 것을 의미한다.
+
+![22](https://user-images.githubusercontent.com/30828236/120473041-8fa5d580-c3e1-11eb-8227-3b8fa1908a2c.PNG)
+
+예제에서는 counter++ 의 원자성이 부족해서 workerA 와 workerB 에서 각각 한 번씩 counter 값을 증가시켜야 하지만 한 번만 증가시켰다.
+이런 현상이 발생할 때마다 예상 값이 2100 에서 1씩 줄어들게 된다.
+
+코루틴에서 명령이 중첩되는 것은 counter++ 작업이 원자적이지 않기 때문이다.
+실제로 이 작업은 counter의 현재 값을 읽은 다음 그 값을 1씩 증가시킨 후에 그 결과를 counter 에 다시 저장하는 세 가지 명령어로 나눌 수 있다.
+
+counter++ 의 원자성이 없기 때문에 두 코루틴이 다른 코루틴이 하는 조작을 무시하고 값을 읽고 수정할 수 있다.
