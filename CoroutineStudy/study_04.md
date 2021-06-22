@@ -145,3 +145,88 @@ fun doSomething() {
 
 
 
+### 안드로이드의 UI 코루틴 디스패처 사용
+
+~~~kotlin
+GlobalScope.launch(dispatcher) {
+    val headlines = fetchRssHeadlines()
+    val newsCount = findViewById<TextView>(R.id.newsCount)
+    GlobalScope.launch(Dispatchers.Main) {
+        newsCount.text = "Found ${headlines.size} News"
+    }
+}
+~~~
+
+**UI 디스패처는 kotlinx-coroutines-android 에서 제공**
+
+
+### 코루틴을 별도 함수로 분리하는 것을 고려할 때 방법
+
+#### 1. 비동기 호출자로 감싼 동기 함수
+
+`fetchRssHeadlines()` 함수를 직접 호출해서 그 결과를 이전과 같은 방식으로 표시하는 `loadNews()` 함수를 만들어서 해결
+
+~~~kotlin
+private fun loadNews() {
+    val headlines = fetchRssHeadlines()
+    val newsCount = findViewById<TextView>(R.id.newsCount)
+    GlobalScope.launch(Dispatchers.Main) {
+        newsCount.text = "Found ${headlines.size} News"
+    }   
+}
+~~~
+
+함수는 동기 방식으로 호출된 같은 스레드에서 `fetchRssHeadlines()` 함수를 호출한다.
+
+~~~kotlin
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.oncreate(savedInstanceState)
+    setContentView(R.layout.activity_main)
+    loadNews()
+}
+~~~
+
+만약 이렇게 한다면 `loadNews()` 는 호출된 스레드와 같은 스레드를 사용하는데, 피드를 가져오는 요청이 UI 스레드에서 일어나기 때문에 이렇게 하면 `NetworkOnMainThreadException`이 발생한다.
+문제를 해결하려면 이전에 서비스 요청을 위해 생성한 디스패처를 사용한 것처럼 `launch()` 블록에서 `loadNews()` 호출을 감쌀 수 있다.
+
+~~~kotlin
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.oncreate(savedInstanceState)
+    setContentView(R.layout.activity_main)
+    GlobalScope.launch(dispatcher) {
+        loadNews()
+    }   
+}
+~~~
+
+#### 2. 미리 정의된 디스패처를 갖는 비동기 함수
+
+`launch()`를 포함하고 결과인 `Job`을 반환하는 함수인 `asyncLoadNews()` 함수를 작성할 수 있다.
+함수는 스레드와 상관없이 `launch()` 블록이 없는 상태로 호출될 수 있고 `Job`을 반환해서 호출자가 취소할 수 있다.
+
+~~~kotlin
+private fun asyncLoadNews() = GlobalScope.launch(dispatcher) {
+    val headlines = fetchRssHeadlines()
+    val newsCount = findViewById<TextView>(R.id.newsCount)
+    launch(Dispatchers.Main) {
+        newsCount.text = "Found ${headlines.size} News"
+    }   
+}
+~~~
+
+`asyncLoadNews()` 는 코드를 감쌀 필요 없이 어디에서든지 함수를 호출할 수 있다.
+
+#### 3. 유연한 디스패처를 가지는 비동기 함수
+
+디스패처를 함수의 파라미터로 설정해서 함수에 어느 정도의 유연성을 줄 수 있다.
+
+~~~kotlin
+private val defDsp = newSingleThreadContext(name = "ServiceCall")
+private fun asyncLoadNews(dispatcher: CoroutineDispatcher = defDsp) = 
+GlobalScope.launch(dispatcher) {
+    ...
+}
+~~~
+
+호출자가 특정 `CoroutineDispatcher`로 코드를 실행할 수 있어서 좀더 유연한 방식이지만, 함수에 적절한 이름이 주어졌을 때만 명시적이라는 단점이 있다.
+ㄴ
