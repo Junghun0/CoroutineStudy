@@ -229,4 +229,3 @@ GlobalScope.launch(dispatcher) {
 ~~~
 
 호출자가 특정 `CoroutineDispatcher`로 코드를 실행할 수 있어서 좀더 유연한 방식이지만, 함수에 적절한 이름이 주어졌을 때만 명시적이라는 단점이 있다.
-ㄴ
