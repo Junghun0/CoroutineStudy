@@ -186,9 +186,9 @@ fun main() = runBlocking {
 
 
 
-## 디퍼드
+## 디퍼드 (Deferred)
 
-디퍼드(Deferred, 자연) 은 결과를 갖는 비동기 작업을 수행하기 위해 잡을 확장한다.
+디퍼드(Deferred, 지연) 은 결과를 갖는 비동기 작업을 수행하기 위해 잡을 확장한다.
 
 다른 언어에서 `Future`, `Promise`라고 하는 것의 코틀린 구현체가 바로 디퍼드 (`Deferred`) 이다.
 
