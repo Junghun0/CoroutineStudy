@@ -5,4 +5,5 @@
 [코루틴 공부 ( 동시성에 대해 ) - 02](./CoroutineStudy/study_02.md) </br>
 [코루틴 공부 ( 코루틴에서 동시성 ) - 03](./CoroutineStudy/study_03.md) </br>
 [코루틴 공부 ( 코루틴 인 액션 ) - 04](./CoroutineStudy/study_04.md) </br>
+[코루틴 공부 ( 라이프 사이클과 에러 핸들링 ) - 05](./CoroutineStudy/study_05.md) </br>
 
