@@ -252,13 +252,13 @@ Took 2021 ms
 
 ## 요약
 
-- **Job**은 아무것도 반환하지 않는 백그라운드 작업에 사용된다.
-- **Deferred**는 백그라운드 작업이 수신하려는 것을 반환할 때 사용된다.
-- **Job**은 [ 생성(**New**), 활성(**Active**), 취소 중(**Canceling**), 취소됨(**Cancelled**), 완료됨(**Completed**) ] 상태값을 갖는다.
-- **Job**은 상태를 파악하기 위해 **isActive**, **isCancelled** 및 **isCompleted** 속성을 사용할 수 있다.
-- **Deferred**는 Job 을 확장해 무언가를 반환할 가능성을 높인다.
-- **Deferred**가 가질 수 있는 상태는 Job 의 상태와 같다.
-- **Job**의 상태는 앞으로만 이동할 수 있다. 이전 상태로 되돌릴 수 없다.
-- **Job**의 최종 상태는 Cancelled 및 Completed 이다.
-- **join()**을 사용해 **Deferred**가 대기된 경우, 예외가 전파되지 않도록 값을 읽기 전에 취소됐는지 여부를 확인해야 한다.
+- `Job`은 아무것도 반환하지 않는 백그라운드 작업에 사용된다.
+- `Deferred`는 백그라운드 작업이 수신하려는 것을 반환할 때 사용된다.
+- `Job`은 [ 생성(`New`), 활성(`Active`), 취소 중(`Canceling`), 취소됨(`Cancelled`), 완료됨(`Completed`) ] 상태값을 갖는다.
+- `Job`은 상태를 파악하기 위해 `isActive`, `isCancelled` 및 `isCompleted` 속성을 사용할 수 있다.
+- `Deferred`는 Job 을 확장해 무언가를 반환할 가능성을 높인다.
+- `Deferred`가 가질 수 있는 상태는 Job 의 상태와 같다.
+- `Job`의 상태는 앞으로만 이동할 수 있다. 이전 상태로 되돌릴 수 없다.
+- `Job`의 최종 상태는 Cancelled 및 Completed 이다.
+- join() 을 사용해 `Deferred`가 대기된 경우, 예외가 전파되지 않도록 값을 읽기 전에 취소됐는지 여부를 확인해야 한다.
 - 항상 Job 에 예외를 기록하거나 표시하자.
