@@ -116,3 +116,41 @@ Profile(id=12, name=Susan, age=28)
 
 ## 일시 중단 함수로 업그레이드
 
+일시 중단 함수 (`suspend`)를 사용하기 위해 코드를 리팩토링해보자.
+
+~~~kotlin
+data class Profile(
+    val id: Long,
+    val name: String,
+    val age: Int
+)
+~~~
+
+~~~kotlin
+interface ProfileServiceRepository {
+    suspend fun fetchByName(name: String): Profile
+    suspend fun fetchById(id: Long): Profile
+}
+~~~
+
+구현 또한 쉽게 바꿀 수 있다.
+
+~~~kotlin
+class ProfileServiceClient: ProfileServiceRepository {
+    override suspend fun fetchByName(name: String): Profile {
+        return Profile(1, name ,28)
+    }
+
+    override suspend fun fetchById(id: Long): Profile {
+        return Profile(id, "Susan", 28)
+    }
+}
+~~~
+
+> 실제 구현에서는 Future 구현을 ProfileServiceRepository 인터페이스와 연결하지 않고, RxJava, Retrofit 또는 기타 라이브러리를 사용해 요청을 수행할 수 있다.
+
+이 방식은 비동기 구현에 비해 몇 가지 분명한 이점이 있다.
+- `유연함` : 인터페이스의 상세 구현 내용은 노출되지 않기 때문에 퓨처를 지원하는 모든 라이브러리를 구현에서 사용할 수 있다. 현재 스레드를 차단하지 않고 예상된 Profile 을 반환하는 구현이라면 어떤 퓨처 유형도 동작할 것이다.
+
+- `간단함` : 순차적으로 수행하려는 작업에 비동기 함수를 사용하면 항상 `await()`를 호출해야 하는 번거로움이 생기고, 명시적으로 `async` 가 포함된 함수의 이름을 지정해야 한다.
+일시 중단 함수 (`suspend`)를 이용하면 레파지토리를 사용할 때마다 이름을 변경하지 않아도 되고 `await()`를 호출할 필요가 없어진다.
