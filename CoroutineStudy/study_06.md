@@ -154,3 +154,101 @@ class ProfileServiceClient: ProfileServiceRepository {
 
 - `간단함` : 순차적으로 수행하려는 작업에 비동기 함수를 사용하면 항상 `await()`를 호출해야 하는 번거로움이 생기고, 명시적으로 `async` 가 포함된 함수의 이름을 지정해야 한다.
 일시 중단 함수 (`suspend`)를 이용하면 레파지토리를 사용할 때마다 이름을 변경하지 않아도 되고 `await()`를 호출할 필요가 없어진다.
+
+
+## 코루틴 컨텍스트 (Coroutine Context)
+
+코루틴은 항상 컨텍스트 안에서 실행된다. 컨텍스트는 코루틴이 어떻게 실행되고 동작해야 하는지를 정의할 수 있게 해주는 요소들의 그룹이다.
+살펴본 몇 가지 컨텍스트로 부터 이야기를 시작한다.
+
+### 디스패처 (Dispatcher)
+
+디스패처는 코루틴이 실행될 스레드를 결정하는데, 여기에는 시작될 곳과 중단 후 재개될 곳을 모두 포함한다.
+
+### CommonPool
+
+`CommonPool` 은 `CPU 바운드 작업`을 위해서 `프레임워크에 의해 자동으로 생성되는 스레드 풀`이다.
+
+스레드 풀의 최대 크기는 시스템의 코어 수에서 1을 뺀 값이다. 현재는 기본 디스패처로 사용되지만 용도를 명시하고 싶다면, 다른 디스패처처럼 사용할 수 있다.
+
+~~~kotlin
+GlobalScope.launch(CommonPool) {
+
+}
+~~~
+
+### 기본 디스패처
+
+현재는 `CommonPool`과 같다. 기본 디스패처 사용을 위해서 디스패처 전달 없이 빌더를 사용할 수 있다.
+~~~kotlin
+GlobalScope.launch {
+
+}
+~~~
+
+혹시 명시적으로 지정한다면
+
+~~~kotlin
+GlobalScope.launch(Dispatchers.Default) {
+
+}
+~~~
+
+### Unconfined
+
+첫 번째 중단 지점에 도달할 때까지 현재 스레드에 있는 코루틴을 실행한다. 코루틴은 일시 중지된 후에, 일시 중단 연산에서 사용된 기존 스레드에서 다시 시작된다.
+
+~~~kotlin
+fun main() = runBlocking {
+    GlobalScope.launch(Dispatchers.Unconfined) {
+        println("Starting in ${Thread.currntThread().name}")
+        delay(500)
+        println("Resuming in ${Thread.currentThread().name}")
+    }.join()
+}
+~~~
+
+처음에는 `main()` 에서 실행 중이었지만, 그 다음 일시 중단 연산이 실행된 `Default Executor` 스레드로 이동했다.
+
+### 단일 스레드 컨텍스트
+
+항상 코루틴이 특정 스레드 안에서 실행된다는 것을 보장한다. 이 유형의 디스패처를 생성하려면 `newSingleThreadContext()`를 사용해야 한다.
+
+~~~kotlin
+fun main() = runBlocking {
+    val dispatcher = newSingleThreadContext("myThread")
+
+    GlobalScope.launch(dispatcher) {
+        println("Starting in ${Thread.currentThread().name}")
+        delay(500)
+        println("Resuming in ${Thread.currentThread().name}")
+    }.join()
+}
+~~~
+
+일시 중지 후에도 항상 같은 스레드에서 실행된다.
+
+### 스레드 풀
+
+스레드 풀을 갖고 있으며 해당 풀에서 가용한 스레드에서 코루틴을 시작하고 재개한다.
+런타임이 가용한 스레드를 정하고 부하 분산을 위한 방법도 정하기 때문에, 따로 할 작업은 없다.
+
+~~~kotlin
+fun main() = runBlocking {
+    val dispatcher = newFixedThreadPoolContext(4, "myPool")
+
+    GlobalScope.launch(dispatcher) {
+        println("Starting in ${Thread.currentThread().name}")
+        delay(500)
+        println("Resuming in ${Thread.currentThread().name}")
+    }.join()
+}
+~~~
+
+앞의 코드에서 볼 수 있듯이 `newFixedThreadPoolContext()`를 사용해 스레드 풀을 만들 수 있다.
+
+~~~kotlin
+Starting in myPool - 1
+Resuming in myPool - 2
+~~~
+다음과 같이 출력된다.
