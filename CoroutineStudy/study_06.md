@@ -252,3 +252,35 @@ Starting in myPool - 1
 Resuming in myPool - 2
 ~~~
 다음과 같이 출력된다.
+
+
+### 예외처리
+
+코루틴 컨텍스트의 또 다른 중요한 용도는 예측이 어려운 예외(`uncaught exception`)에 대한 동작을 정의하는 것이다.
+이러한 유형의 컨텍스트는 다음과 같이 `CoroutineExceptionHandler` 를 구현해 만들 수 있다.
+
+~~~kotlin
+fun main(args: Array<String>) = runBlocking {
+    val handler = CoroutineExceptionHandler({ context, throwable -> 
+        println("Error captured in $context")
+        println("Message: ${throwable.message}")
+    })
+
+    GlobalScope.launch(handler) {
+        TODO("Not implemented yet!")
+    }
+
+    // wait for the error to happen
+    dealy(500)
+}
+~~~
+
+예제에서는 예측이 어려운 예외에 대한 정보를 출력하는 `CoroutineExceptionHandler`를 생성한다.
+그런 다음 예외를 던지고, 애플리케이션에 메시지를 출력하기 위해 약간 시간을 주는 코루틴을 시작한다.
+
+그러면 애플리케이션이 예외를 정상적으로 처리하게 된다.
+
+~~~kotlin
+Message : An operation is not implemented: Not implemented yet!
+~~~
+
